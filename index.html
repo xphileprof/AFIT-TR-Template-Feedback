@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit a Bug/Feature Request</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 0 20px; line-height: 1.6; color: #333; }
+        h1 { color: #0056b3; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        select {
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-25.7-1.3L146.2%20202.7%2031.5%2068.1a17.6%2017.6%200%200%200-25.7%201.3%2017.6%2017.6%200%200%200%201.3%2025.7l117.8%20117.9c4.7%204.7%2010.9%207%2017.1%207s12.4-2.3%2017.1-7l117.9-117.9a17.6%2017.6%200%200%200%201.3-25.7z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 0.7em top 50%, 0 0;
+            background-size: 0.65em auto, 100%;
+        }
+        button {
+            background-color: #007bff; /* Blue */
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background-color 0.2s ease;
+        }
+        button:hover { background-color: #0056b3; }
+        .g-recaptcha { margin-bottom: 15px; }
+        #response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Submit an Issue</h1>
+    <p>Please use this form to report bugs or suggest new features for our project.</p>
+
+    <form id="issueForm">
+        <label for="type">Issue Type:</label>
+        <select id="type" name="type" required>
+            <option value="Bug">Bug Report</option>
+            <option value="Feature">Feature Request</option>
+        </select>
+        <br><br>
+
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title" placeholder="A concise summary of the issue" required>
+
+        <label for="description">Description:</label>
+        <textarea id="description" name="description" rows="10" placeholder="Provide detailed steps to reproduce, expected behavior, etc. (Markdown supported)" required></textarea>
+
+        <label for="accessCode">Secret Code:</label>
+        <input type="text" id="accessCode" name="accessCode" placeholder="Enter the secret code you were given" required>
+
+        <div class="g-recaptcha" data-sitekey="6Lc5B3krAAAAAKW2hkuBwMpquQe2FoPCvu6Gx_zH"></div>
+        <br>
+
+        <button type="submit">Submit Issue</button>
+    </form>
+
+    <div id="response"></div>
+
+    <script>
+        document.getElementById('issueForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const type = document.getElementById('type').value;
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const accessCode = document.getElementById('accessCode').value;
+            const recaptchaToken = grecaptcha.getResponse();
+            const responseDiv = document.getElementById('response');
+
+            if (!recaptchaToken) {
+                responseDiv.className = 'error';
+                responseDiv.textContent = 'Please complete the reCAPTCHA.';
+                return;
+            }
+
+            responseDiv.className = '';
+            responseDiv.textContent = 'Submitting...';
+
+            try {
+                // This URL will point to your serverless function
+                const serverlessFunctionUrl = '/.netlify/functions/submit-issue'; // Standard path for Netlify Functions
+
+                const res = await fetch(serverlessFunctionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type,
+                        title,
+                        description,
+                        accessCode,
+                        recaptchaToken,
+                    }),
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    responseDiv.className = 'success';
+                    responseDiv.innerHTML = `Issue submitted successfully! View it <a href="${data.issueUrl}" target="_blank">here</a>.`;
+                    document.getElementById('issueForm').reset();
+                    grecaptcha.reset(); // Reset reCAPTCHA for next submission
+                } else {
+                    responseDiv.className = 'error';
+                    responseDiv.textContent = `Error: ${data.message || 'Something went wrong.'}`;
+                    grecaptcha.reset(); // Reset reCAPTCHA on error
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                responseDiv.className = 'error';
+                responseDiv.textContent = `Network error: Could not connect to the submission service.`;
+                grecaptcha.reset();
+            }
+        });
+    </script>
+</body>
+</html>

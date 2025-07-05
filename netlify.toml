@@ -1,0 +1,3 @@
+[build]
+  functions = "netlify/functions"
+  publish = "." # This means the root of your repository is the publish directory for static files (index.html)
