@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit a Bug/Feature Request</title>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js?render=6LeuNn8rAAAAAPiQR23Z_18nKeH4Al6598En9Buf" async defer></script>
     <style>
         body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 0 20px; line-height: 1.6; color: #333; }
         h1 { color: #0056b3; }
@@ -69,7 +69,7 @@
         <label for="accessCode">Secret Code:</label>
         <input type="text" id="accessCode" name="accessCode" placeholder="Enter the secret code you were given" required>
 
-        <div class="g-recaptcha" data-sitekey="YOUR_NEW_SITE_KEY_HERE"></div>
+        <!-- reCAPTCHA v3 - no visible element needed -->
         <br>
 
         <button type="submit">Submit Issue</button>
@@ -85,19 +85,15 @@
             const title = document.getElementById('title').value;
             const description = document.getElementById('description').value;
             const accessCode = document.getElementById('accessCode').value;
-            const recaptchaToken = grecaptcha.getResponse();
             const responseDiv = document.getElementById('response');
-
-            if (!recaptchaToken) {
-                responseDiv.className = 'error';
-                responseDiv.textContent = 'Please complete the reCAPTCHA.';
-                return;
-            }
 
             responseDiv.className = '';
             responseDiv.textContent = 'Submitting...';
 
             try {
+                // Get reCAPTCHA v3 token
+                const recaptchaToken = await grecaptcha.execute('6LeuNn8rAAAAAPiQR23Z_18nKeH4Al6598En9Buf', {action: 'submit'});
+
                 // This URL will point to your serverless function
                 const serverlessFunctionUrl = '/.netlify/functions/submit-issue'; // Standard path for Netlify Functions
 
@@ -121,17 +117,17 @@
                     responseDiv.className = 'success';
                     responseDiv.innerHTML = `Issue submitted successfully! View it <a href="${data.issueUrl}" target="_blank">here</a>.`;
                     document.getElementById('issueForm').reset();
-                    grecaptcha.reset(); // Reset reCAPTCHA for next submission
+                    // No need to reset reCAPTCHA v3
                 } else {
                     responseDiv.className = 'error';
                     responseDiv.textContent = `Error: ${data.message || 'Something went wrong.'}`;
-                    grecaptcha.reset(); // Reset reCAPTCHA on error
+                    // No need to reset reCAPTCHA v3
                 }
             } catch (error) {
                 console.error('Network error:', error);
                 responseDiv.className = 'error';
                 responseDiv.textContent = `Network error: Could not connect to the submission service.`;
-                grecaptcha.reset();
+                // No need to reset reCAPTCHA v3
             }
         });
     </script>
